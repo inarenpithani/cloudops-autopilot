@@ -6,6 +6,7 @@ from datetime import datetime
 
 def detect_high_cpu(
     cpu_usage: float,
+    resource: str,
     threshold: float = 90.0,
 ) -> Optional[Incident]:
     if cpu_usage <= threshold:
@@ -15,7 +16,7 @@ def detect_high_cpu(
         incident_id="INC-001",
         incident_type="HIGH_CPU",
         severity="HIGH",
-        resource="EC2-i-123456",
+        resource=resource,
         detected_at=datetime.now(),
         status="DETECTED",
         description=f"CPU utilization reached {cpu_usage}%, exceeding the {threshold}% threshold.",

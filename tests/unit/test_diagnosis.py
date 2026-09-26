@@ -3,7 +3,10 @@ from cloudops_engine.diagnosis.root_cause import diagnose_incident
 
 
 def test_high_cpu_diagnosis():
-    incident = detect_high_cpu(95)
+    incident = detect_high_cpu(
+        95,
+        resource="i-05e3bbde2a13509f7",
+    )
 
     diagnosis = diagnose_incident(incident)
 
@@ -11,7 +14,11 @@ def test_high_cpu_diagnosis():
 
 
 def test_unknown_incident_diagnosis():
-    incident = detect_high_cpu(95)
+    incident = detect_high_cpu(
+        95,
+        resource="i-05e3bbde2a13509f7",
+    )
+
     incident.incident_type = "UNKNOWN"
 
     diagnosis = diagnose_incident(incident)

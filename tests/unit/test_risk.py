@@ -3,7 +3,10 @@ from cloudops_engine.risk.assessment import assess_risk
 
 
 def test_high_cpu_high_severity_has_medium_risk():
-    incident = detect_high_cpu(95)
+    incident = detect_high_cpu(
+        95,
+        resource="i-05e3bbde2a13509f7",
+    )
 
     risk = assess_risk(incident)
 
@@ -11,7 +14,11 @@ def test_high_cpu_high_severity_has_medium_risk():
 
 
 def test_low_risk_for_other_incident():
-    incident = detect_high_cpu(95)
+    incident = detect_high_cpu(
+        95,
+        resource="i-05e3bbde2a13509f7",
+    )
+
     incident.incident_type = "UNKNOWN"
 
     risk = assess_risk(incident)
