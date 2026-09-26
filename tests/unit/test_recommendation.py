@@ -4,7 +4,7 @@ from cloudops_engine.remediation.recommendation import recommend_action
 
 def test_medium_risk_high_cpu_recommendation():
     incident = detect_high_cpu(
-        95,
+        [92, 94, 96],
         resource="i-05e3bbde2a13509f7",
     )
 
@@ -14,13 +14,14 @@ def test_medium_risk_high_cpu_recommendation():
     )
 
     assert recommendation == (
-        "Collect additional metrics and investigate the top CPU-consuming processes."
+        "Collect additional metrics and investigate "
+        "the top CPU-consuming processes."
     )
 
 
 def test_low_risk_high_cpu_recommendation():
     incident = detect_high_cpu(
-        95,
+        [92, 94, 96],
         resource="i-05e3bbde2a13509f7",
     )
 
@@ -29,4 +30,7 @@ def test_low_risk_high_cpu_recommendation():
         "LOW",
     )
 
-    assert recommendation == "Monitor CPU utilization and collect additional diagnostic data."
+    assert recommendation == (
+        "Monitor CPU utilization and collect "
+        "additional diagnostic data."
+    )

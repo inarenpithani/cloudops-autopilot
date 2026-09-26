@@ -16,8 +16,8 @@ class CloudWatchClient:
         self,
         instance_id: str,
         minutes: int = 15,
-    ) -> float | None:
-        """Return the latest average CPU utilization for an EC2 instance."""
+    ) -> list[float]:
+        """Return CPU utilization datapoints for an EC2 instance."""
 
         end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(minutes=minutes)
@@ -39,12 +39,12 @@ class CloudWatchClient:
 
         datapoints = response.get("Datapoints", [])
 
-        if not datapoints:
-            return None
-
-        latest_datapoint = max(
+        sorted_datapoints = sorted(
             datapoints,
             key=lambda datapoint: datapoint["Timestamp"],
         )
 
-        return float(latest_datapoint["Average"])
+        return [
+            float(datapoint["Average"])
+            for datapoint in sorted_datapoints
+        ]

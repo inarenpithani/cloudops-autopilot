@@ -1,15 +1,23 @@
+from datetime import datetime
 from typing import Optional
 
 from cloudops_engine.models.incident import Incident
-from datetime import datetime
 
 
 def detect_high_cpu(
-    cpu_usage: float,
+    cpu_datapoints: list[float],
     resource: str,
     threshold: float = 90.0,
+    required_breaches: int = 3,
 ) -> Optional[Incident]:
-    if cpu_usage <= threshold:
+    """Detect a persistent high CPU condition."""
+
+    if len(cpu_datapoints) < required_breaches:
+        return None
+
+    recent_datapoints = cpu_datapoints[-required_breaches:]
+
+    if not all(cpu > threshold for cpu in recent_datapoints):
         return None
 
     return Incident(
@@ -19,5 +27,8 @@ def detect_high_cpu(
         resource=resource,
         detected_at=datetime.now(),
         status="DETECTED",
-        description=f"CPU utilization reached {cpu_usage}%, exceeding the {threshold}% threshold.",
+        description=(
+            f"CPU remained above {threshold}% for "
+            f"{required_breaches} consecutive datapoints."
+        ),
     )

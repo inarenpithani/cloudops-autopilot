@@ -13,18 +13,17 @@ class MonitoringService:
         self,
         instance_id: str,
         threshold: float = 90.0,
+        required_breaches: int = 3,
     ) -> Incident | None:
-        """Read EC2 CPU utilization and detect a high CPU incident."""
+        """Read EC2 CPU datapoints and detect persistent high CPU."""
 
-        cpu_usage = self.cloudwatch_client.get_cpu_utilization(
+        cpu_datapoints = self.cloudwatch_client.get_cpu_utilization(
             instance_id=instance_id,
         )
 
-        if cpu_usage is None:
-            return None
-
         return detect_high_cpu(
-            cpu_usage=cpu_usage,
+            cpu_datapoints=cpu_datapoints,
             resource=instance_id,
             threshold=threshold,
+            required_breaches=required_breaches,
         )
