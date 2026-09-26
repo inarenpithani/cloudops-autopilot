@@ -16,8 +16,8 @@ class CloudWatchClient:
         self,
         instance_id: str,
         minutes: int = 15,
-    ) -> list[float]:
-        """Return CPU utilization datapoints for an EC2 instance."""
+    ) -> list[dict]:
+        """Return CPU utilization datapoints with timestamps."""
 
         end_time = datetime.now(timezone.utc)
         start_time = end_time - timedelta(minutes=minutes)
@@ -45,6 +45,9 @@ class CloudWatchClient:
         )
 
         return [
-            float(datapoint["Average"])
+            {
+                "value": float(datapoint["Average"]),
+                "timestamp": datapoint["Timestamp"],
+            }
             for datapoint in sorted_datapoints
         ]

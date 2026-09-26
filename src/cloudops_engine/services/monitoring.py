@@ -1,6 +1,6 @@
 from cloudops_engine.aws.cloudwatch import CloudWatchClient
 from cloudops_engine.detection.detector import detect_high_cpu
-from cloudops_engine.models.incident import Incident
+from cloudops_engine.models.detection_result import DetectionResult
 
 
 class MonitoringService:
@@ -14,7 +14,7 @@ class MonitoringService:
         instance_id: str,
         threshold: float = 90.0,
         required_breaches: int = 3,
-    ) -> Incident | None:
+    ) -> DetectionResult | None:
         """Read EC2 CPU datapoints and detect persistent high CPU."""
 
         cpu_datapoints = self.cloudwatch_client.get_cpu_utilization(

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from cloudops_engine.aws.cloudwatch import CloudWatchClient
 
 
@@ -11,6 +13,11 @@ def test_get_cpu_utilization():
 
     assert isinstance(cpu_datapoints, list)
 
-    for cpu in cpu_datapoints:
-        assert isinstance(cpu, float)
-        assert 0.0 <= cpu <= 100.0
+    for datapoint in cpu_datapoints:
+        assert isinstance(datapoint, dict)
+
+        assert "value" in datapoint
+        assert "timestamp" in datapoint
+
+        assert isinstance(datapoint["value"], float)
+        assert isinstance(datapoint["timestamp"], datetime)

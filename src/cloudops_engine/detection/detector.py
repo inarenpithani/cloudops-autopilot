@@ -1,15 +1,17 @@
 from datetime import datetime
 from typing import Optional
 
+from cloudops_engine.models.detection_result import DetectionResult
+from cloudops_engine.models.evidence import Evidence
 from cloudops_engine.models.incident import Incident
 
 
 def detect_high_cpu(
-    cpu_datapoints: list[float],
+    cpu_datapoints: list[dict],
     resource: str,
     threshold: float = 90.0,
     required_breaches: int = 3,
-) -> Optional[Incident]:
+) -> Optional[DetectionResult]:
     """Detect a persistent high CPU condition."""
 
     if len(cpu_datapoints) < required_breaches:
@@ -17,10 +19,13 @@ def detect_high_cpu(
 
     recent_datapoints = cpu_datapoints[-required_breaches:]
 
-    if not all(cpu > threshold for cpu in recent_datapoints):
+    if not all(
+        datapoint["value"] > threshold
+        for datapoint in recent_datapoints
+    ):
         return None
 
-    return Incident(
+    incident = Incident(
         incident_id="INC-001",
         incident_type="HIGH_CPU",
         severity="HIGH",
@@ -31,4 +36,23 @@ def detect_high_cpu(
             f"CPU remained above {threshold}% for "
             f"{required_breaches} consecutive datapoints."
         ),
+    )
+
+    evidence = [
+        Evidence(
+            source="CloudWatch",
+            signal="CPUUtilization",
+            value=f"{datapoint['value']}%",
+            observed_at=datapoint["timestamp"],
+            description=(
+                f"CPU utilization exceeded the configured "
+                f"threshold of {threshold}%."
+            ),
+        )
+        for datapoint in recent_datapoints
+    ]
+
+    return DetectionResult(
+        incident=incident,
+        evidence=evidence,
     )

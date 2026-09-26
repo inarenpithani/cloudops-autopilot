@@ -24,21 +24,30 @@ def main():
         cloudwatch_client=cloudwatch_client,
     )
 
-    incident = monitoring_service.check_ec2_cpu(
+    detection_result = monitoring_service.check_ec2_cpu(
         instance_id=EC2_INSTANCE_ID,
         threshold=CPU_THRESHOLD,
     )
 
-    if incident is None:
+    if detection_result is None:
         print("No incident detected.")
         return
 
-    diagnosis = diagnose_incident(incident)
+    incident = detection_result.incident
+    evidence = detection_result.evidence
+
+    diagnosis = diagnose_incident(
+        incident,
+        evidence,
+    )
+
     risk = assess_risk(incident)
     recommendation = recommend_action(incident, risk)
 
     print(f"Incident: {incident.incident_type}")
-    print(f"Diagnosis: {diagnosis}")
+    print(f"Diagnosis: {diagnosis.probable_cause}")
+    print(f"Confidence: {diagnosis.confidence}")
+    print(f"Evidence: {diagnosis.evidence}")
     print(f"Risk: {risk}")
 
     approved = request_approval(recommendation)
