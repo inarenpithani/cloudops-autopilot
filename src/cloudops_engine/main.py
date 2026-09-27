@@ -3,6 +3,7 @@ from cloudops_engine.config import AWS_REGION, EC2_INSTANCE_ID, CPU_THRESHOLD
 from cloudops_engine.diagnosis.root_cause import diagnose_incident
 from cloudops_engine.remediation.approval import request_approval
 from cloudops_engine.remediation.executor import execute_remediation
+from cloudops_engine.remediation.guardrails import validate_action
 from cloudops_engine.remediation.recommendation import recommend_action
 from cloudops_engine.risk.assessment import assess_risk
 from cloudops_engine.services.monitoring import MonitoringService
@@ -36,6 +37,14 @@ def main():
     incident = detection_result.incident
     evidence = detection_result.evidence
 
+    print(f"Incident detected: {incident.incident_type}")
+
+    incident.transition_to("ACKNOWLEDGED")
+    print(f"Incident state: {incident.status}")
+
+    incident.transition_to("INVESTIGATING")
+    print(f"Incident state: {incident.status}")
+
     diagnosis = diagnose_incident(
         incident,
         evidence,
@@ -44,30 +53,67 @@ def main():
     risk = assess_risk(incident)
     recommendation = recommend_action(incident, risk)
 
-    print(f"Incident: {incident.incident_type}")
     print(f"Diagnosis: {diagnosis.probable_cause}")
     print(f"Confidence: {diagnosis.confidence}")
     print(f"Evidence: {diagnosis.evidence}")
     print(f"Risk: {risk}")
+    print(f"Recommendation: {recommendation}")
+
+    guardrail_result = validate_action(
+        action=recommendation,
+        risk=risk,
+    )
+
+    print(f"Guardrail allowed: {guardrail_result.allowed}")
+    print(f"Guardrail reason: {guardrail_result.reason}")
+
+    if not guardrail_result.allowed:
+        print("Remediation blocked by safety guardrails.")
+        return
 
     approved = request_approval(recommendation)
 
-    if approved:
-        print("Action approved.")
-
-        result = execute_remediation(recommendation)
-        print(result)
-
-        simulated_cpu_after_remediation = 60.0
-        recovered = verify_cpu_recovery(simulated_cpu_after_remediation)
-
-        if recovered:
-            print("Verification: System recovered successfully.")
-        else:
-            print("Verification: System has not recovered.")
-
-    else:
+    if not approved:
         print("Action rejected.")
+        return
+
+    print("Action approved.")
+
+    incident.transition_to("REMEDIATING")
+    print(f"Incident state: {incident.status}")
+
+    remediation_result = execute_remediation(
+        action=recommendation,
+        incident_id=incident.incident_id,
+    )
+
+    print(f"Remediation status: {remediation_result.status}")
+    print(f"Remediation message: {remediation_result.message}")
+
+    if remediation_result.error:
+        print(f"Remediation error: {remediation_result.error}")
+
+    if remediation_result.status != "SUCCESS":
+        print("Remediation did not execute successfully.")
+        return
+
+    incident.transition_to("VERIFYING")
+    print(f"Incident state: {incident.status}")
+
+    simulated_cpu_after_remediation = 60.0
+
+    recovered = verify_cpu_recovery(
+        simulated_cpu_after_remediation,
+    )
+
+    if recovered:
+        incident.transition_to("RESOLVED")
+        print(f"Incident state: {incident.status}")
+        print("Verification: System recovered successfully.")
+    else:
+        incident.transition_to("INVESTIGATING")
+        print(f"Incident state: {incident.status}")
+        print("Verification: System has not recovered.")
 
 
 if __name__ == "__main__":
