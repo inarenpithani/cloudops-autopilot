@@ -1214,3 +1214,20 @@ CloudOps Autopilot follows a layered incident automation architecture:
 ```
 
 The architecture is intentionally designed so that automation does not bypass safety, policy, approval, or verification boundaries.
+
+# 39. Event-Driven Architecture Boundary
+
+Day 7 introduces the first application-level event boundary.
+
+The event layer separates incoming operational events from the CloudOps incident processing logic.
+
+Current implementation:
+
+```text
+Incoming Cloud Event
+        ↓
+CloudEvent
+        ↓
+Event Handler
+        ↓
+Supported Event Type
