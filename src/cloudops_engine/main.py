@@ -5,6 +5,9 @@ from cloudops_engine.remediation.approval import request_approval
 from cloudops_engine.remediation.executor import execute_remediation
 from cloudops_engine.remediation.guardrails import validate_action
 from cloudops_engine.remediation.recommendation import recommend_action
+from cloudops_engine.repositories.dynamodb_incident_repository import (
+    DynamoDBIncidentRepository,
+)
 from cloudops_engine.risk.assessment import assess_risk
 from cloudops_engine.services.monitoring import MonitoringService
 from cloudops_engine.verification.health_check import verify_cpu_recovery
@@ -25,6 +28,11 @@ def main():
         cloudwatch_client=cloudwatch_client,
     )
 
+    incident_repository = DynamoDBIncidentRepository(
+        table_name="cloudops-autopilot-incidents",
+        region_name=AWS_REGION,
+    )
+
     detection_result = monitoring_service.check_ec2_cpu(
         instance_id=EC2_INSTANCE_ID,
         threshold=CPU_THRESHOLD,
@@ -39,10 +47,15 @@ def main():
 
     print(f"Incident detected: {incident.incident_type}")
 
+    incident_repository.save(incident)
+    print("Incident persisted: DynamoDB")
+
     incident.transition_to("ACKNOWLEDGED")
+    incident_repository.update(incident)
     print(f"Incident state: {incident.status}")
 
     incident.transition_to("INVESTIGATING")
+    incident_repository.update(incident)
     print(f"Incident state: {incident.status}")
 
     diagnosis = diagnose_incident(
@@ -80,6 +93,7 @@ def main():
     print("Action approved.")
 
     incident.transition_to("REMEDIATING")
+    incident_repository.update(incident)
     print(f"Incident state: {incident.status}")
 
     remediation_result = execute_remediation(
@@ -98,6 +112,7 @@ def main():
         return
 
     incident.transition_to("VERIFYING")
+    incident_repository.update(incident)
     print(f"Incident state: {incident.status}")
 
     simulated_cpu_after_remediation = 60.0
@@ -108,10 +123,12 @@ def main():
 
     if recovered:
         incident.transition_to("RESOLVED")
+        incident_repository.update(incident)
         print(f"Incident state: {incident.status}")
         print("Verification: System recovered successfully.")
     else:
         incident.transition_to("INVESTIGATING")
+        incident_repository.update(incident)
         print(f"Incident state: {incident.status}")
         print("Verification: System has not recovered.")
 
