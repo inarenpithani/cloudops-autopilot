@@ -10,7 +10,9 @@ from cloudops_engine.repositories.dynamodb_incident_repository import (
 )
 from cloudops_engine.risk.assessment import assess_risk
 from cloudops_engine.services.monitoring import MonitoringService
-from cloudops_engine.verification.health_check import verify_cpu_recovery
+from cloudops_engine.verification.verification_service import (
+    VerificationService,
+)
 
 
 def main():
@@ -25,6 +27,10 @@ def main():
     )
 
     monitoring_service = MonitoringService(
+        cloudwatch_client=cloudwatch_client,
+    )
+
+    verification_service = VerificationService(
         cloudwatch_client=cloudwatch_client,
     )
 
@@ -115,10 +121,9 @@ def main():
     incident_repository.update(incident)
     print(f"Incident state: {incident.status}")
 
-    simulated_cpu_after_remediation = 60.0
-
-    recovered = verify_cpu_recovery(
-        simulated_cpu_after_remediation,
+    recovered = verification_service.verify_ec2_cpu_recovery(
+        instance_id=EC2_INSTANCE_ID,
+        threshold=CPU_THRESHOLD,
     )
 
     if recovered:
