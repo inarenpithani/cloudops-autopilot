@@ -53,14 +53,16 @@ class DynamoDBIncidentRepository(IncidentRepository):
     def update(self, incident: Incident) -> None:
         """Update an existing incident in DynamoDB."""
 
-        if self.get(incident.incident_id) is None:
+        try:
+            self.table.put_item(
+                Item=self._serialize(incident),
+                ConditionExpression="attribute_exists(incident_id)",
+            )
+
+        except self.table.meta.client.exceptions.ConditionalCheckFailedException:
             raise ValueError(
                 f"Incident not found: {incident.incident_id}"
             )
-
-        self.table.put_item(
-            Item=self._serialize(incident)
-        )
 
     @staticmethod
     def _serialize(incident: Incident) -> dict:
