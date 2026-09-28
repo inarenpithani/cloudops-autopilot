@@ -8,3 +8,8 @@ __pycache__/
 *.tfstate
 *.tfstate.*
 *.egg-info/
+
+# Local deployment artifacts
+build/
+cloudops-autopilot-event-handler.zip
+response.json
