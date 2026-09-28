@@ -646,9 +646,3 @@ Future autonomous capabilities must preserve the existing safety boundaries.
 
 ---
 
-## 23. Related Architecture Decisions
-
-- `docs/decisions/adr-001-human-in-the-loop-remediation.md`
-- `docs/decisions/adr-002-event-driven-incident-processing.md`
-- `docs/decisions/adr-003-persistent-incident-state.md`
-- `docs/decisions/adr-004-remediation-safety-boundaries.md`

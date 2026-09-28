@@ -1,0 +1,64 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CloudWatchReadMetrics",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:GetMetricStatistics"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "RebootApprovedEC2Instance",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:RebootInstances"
+      ],
+      "Resource": "arn:aws:ec2:ap-south-1:298785331841:instance/i-05e3bbde2a13509f7"
+    },
+    {
+      "Sid": "PublishIncidentNotifications",
+      "Effect": "Allow",
+      "Action": [
+        "sns:Publish"
+      ],
+      "Resource": "arn:aws:sns:ap-south-1:298785331841:cloudops-autopilot-incidents"
+    },
+    {
+      "Sid": "IncidentTableAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem",
+        "dynamodb:GetItem"
+      ],
+      "Resource": "arn:aws:dynamodb:ap-south-1:298785331841:table/cloudops-autopilot-incidents"
+    },
+    {
+      "Sid": "NotificationIdempotencyAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem"
+      ],
+      "Resource": "arn:aws:dynamodb:ap-south-1:298785331841:table/cloudops-autopilot-notification-idempotency"
+    },
+    {
+      "Sid": "RemediationIdempotencyAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem",
+        "dynamodb:DeleteItem"
+      ],
+      "Resource": "arn:aws:dynamodb:ap-south-1:298785331841:table/cloudops-autopilot-remediation-idempotency"
+    },
+    {
+      "Sid": "RemediationExecutionAuditAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem"
+      ],
+      "Resource": "arn:aws:dynamodb:ap-south-1:298785331841:table/cloudops-autopilot-remediation-executions"
+    }
+  ]
+}
