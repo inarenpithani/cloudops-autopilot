@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from cloudops_engine.remediation.action import RemediationAction
+
 
 @dataclass
 class GuardrailResult:
@@ -10,35 +12,46 @@ class GuardrailResult:
 
 
 ALLOWED_ACTIONS = {
-    "Monitor CPU utilization and collect additional diagnostic data.",
-    "Collect additional metrics and investigate the top CPU-consuming processes.",
+    "EC2_REBOOT",
 }
 
 
-def validate_action(action: str, risk: str) -> GuardrailResult:
-    """
-    Validate whether a remediation action is allowed to proceed.
+ALLOWED_RISK_LEVELS = {
+    "LOW",
+    "MEDIUM",
+}
 
-    The current implementation is intentionally restrictive.
-    Real AWS-mutating actions will be introduced later.
-    """
 
-    if not action or not action.strip():
+def validate_action(
+    action: RemediationAction,
+) -> GuardrailResult:
+    """Validate whether a remediation action is allowed to proceed."""
+
+    if not action.action_id:
         return GuardrailResult(
             allowed=False,
-            reason="Remediation action cannot be empty.",
+            reason="Remediation action ID cannot be empty.",
         )
 
-    if action not in ALLOWED_ACTIONS:
+    if action.action_id not in ALLOWED_ACTIONS:
         return GuardrailResult(
             allowed=False,
-            reason="Remediation action is not in the approved action allowlist.",
+            reason=(
+                "Remediation action is not in the "
+                "approved action allowlist."
+            ),
         )
 
-    if risk not in {"LOW", "MEDIUM"}:
+    if action.risk_level not in ALLOWED_RISK_LEVELS:
         return GuardrailResult(
             allowed=False,
             reason="Remediation risk level is not permitted.",
+        )
+
+    if not action.resource_id:
+        return GuardrailResult(
+            allowed=False,
+            reason="Remediation resource ID cannot be empty.",
         )
 
     return GuardrailResult(

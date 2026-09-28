@@ -1,4 +1,5 @@
 from cloudops_engine.aws.cloudwatch import CloudWatchClient
+from cloudops_engine.aws.ec2 import EC2Client
 from cloudops_engine.aws.sns import SNSClient
 from cloudops_engine.config import (
     AWS_REGION,
@@ -9,6 +10,7 @@ from cloudops_engine.config import (
 from cloudops_engine.diagnosis.root_cause import diagnose_incident
 from cloudops_engine.notifications.policy import should_notify
 from cloudops_engine.notifications.service import NotificationService
+from cloudops_engine.remediation.action import RemediationAction
 from cloudops_engine.remediation.approval import request_approval
 from cloudops_engine.remediation.executor import execute_remediation
 from cloudops_engine.remediation.guardrails import validate_action
@@ -18,6 +20,12 @@ from cloudops_engine.repositories.dynamodb_incident_repository import (
 )
 from cloudops_engine.repositories.notification_idempotency_repository import (
     NotificationIdempotencyRepository,
+)
+from cloudops_engine.repositories.remediation_execution_repository import (
+    RemediationExecutionRepository,
+)
+from cloudops_engine.repositories.remediation_idempotency_repository import (
+    RemediationIdempotencyRepository,
 )
 from cloudops_engine.risk.assessment import assess_risk
 from cloudops_engine.services.monitoring import MonitoringService
@@ -35,6 +43,24 @@ def main():
 
     cloudwatch_client = CloudWatchClient(
         region_name=AWS_REGION,
+    )
+
+    ec2_client = EC2Client(
+        region_name=AWS_REGION,
+    )
+
+    remediation_idempotency_repository = (
+        RemediationIdempotencyRepository(
+            table_name="cloudops-autopilot-remediation-idempotency",
+            region_name=AWS_REGION,
+        )
+    )
+
+    remediation_execution_repository = (
+        RemediationExecutionRepository(
+            table_name="cloudops-autopilot-remediation-executions",
+            region_name=AWS_REGION,
+        )
     )
 
     sns_client = SNSClient(
@@ -114,7 +140,10 @@ def main():
     )
 
     risk = assess_risk(incident)
-    recommendation = recommend_action(incident, risk)
+    recommendation = recommend_action(
+        incident,
+        risk,
+    )
 
     print(f"Diagnosis: {diagnosis.probable_cause}")
     print(f"Confidence: {diagnosis.confidence}")
@@ -122,9 +151,19 @@ def main():
     print(f"Risk: {risk}")
     print(f"Recommendation: {recommendation}")
 
+    remediation_action = RemediationAction(
+        action_id="EC2_REBOOT",
+        name="Reboot EC2 instance",
+        description=(
+            "Restart a running EC2 instance "
+            "to recover from a controlled incident."
+        ),
+        risk_level="MEDIUM",
+        resource_id=EC2_INSTANCE_ID,
+    )
+
     guardrail_result = validate_action(
-        action=recommendation,
-        risk=risk,
+        remediation_action,
     )
 
     print(f"Guardrail allowed: {guardrail_result.allowed}")
@@ -134,7 +173,9 @@ def main():
         print("Remediation blocked by safety guardrails.")
         return
 
-    approved = request_approval(recommendation)
+    approved = request_approval(
+        remediation_action,
+    )
 
     if not approved:
         print("Action rejected.")
@@ -165,8 +206,11 @@ def main():
             )
 
     remediation_result = execute_remediation(
-        action=recommendation,
+        action=remediation_action,
         incident_id=incident.incident_id,
+        ec2_client=ec2_client,
+        idempotency_repository=remediation_idempotency_repository,
+        execution_repository=remediation_execution_repository,
     )
 
     print(f"Remediation status: {remediation_result.status}")
